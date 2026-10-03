@@ -31,27 +31,8 @@ No modo local, o QR aponta para `http://127.0.0.1:5000/...`.
 
 Para as placas funcionarem na rua, o site precisa estar **publicado na internet** com um domínio/URL pública.
 
-## Deixar público
+## Deixar público (GitHub + Render)
 
-1. Hospede o app (Render, Railway, VPS, etc.)
-2. Defina as variáveis de ambiente:
+Siga o guia: [DEPLOY.md](DEPLOY.md)
 
-```bash
-SECRET_KEY=uma-chave-longa-aleatoria
-ADMIN_PASSWORD=senha-forte
-PUBLIC_BASE_URL=https://seu-dominio.com
-```
-
-3. Com `PUBLIC_BASE_URL` definido, os QR codes passam a usar essa URL pública.
-4. **Regenere/baixe o PNG** das placas depois de publicar (os QR antigos com localhost não vão funcionar fora do PC).
-
-### Teste rápido com túnel (sem hospedar ainda)
-
-Com o app rodando na porta 5000, use um túnel (ngrok / Cloudflare Tunnel) e rode:
-
-```bash
-set PUBLIC_BASE_URL=https://sua-url-do-tunel
-python app.py
-```
-
-Depois baixe de novo o PNG do QR — ele já vai apontar para a URL pública.
+Depois de publicar, **baixe de novo** as plaquinhas PDF/PNG — os QR com localhost não funcionam fora do PC.
