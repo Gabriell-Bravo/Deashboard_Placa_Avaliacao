@@ -25,26 +25,6 @@
   {% endif %}
 
   <main class="container">
-    {% if session.get('logged_in') and is_local_host %}
-    <div class="local-warning">
-      <strong>Site ainda está local</strong>
-      <p>
-        Os QR codes apontam para <code>{{ public_base or 'http://127.0.0.1:5000' }}</code>.
-        Seu celular não consegue abrir isso — só funciona neste computador.
-        Para as placas funcionarem na rua, o sistema precisa ser publicado na internet.
-      </p>
-    </div>
-    {% endif %}
-    {% if session.get('logged_in') and not persistent_data and not is_local_host %}
-    <div class="local-warning">
-      <strong>Disco persistente não configurado</strong>
-      <p>
-        Sem Disk no Render (<code>DATA_DIR=/var/data</code>), os cadastros podem sumir a cada deploy.
-        Configure o disco e use Exportar backup.
-      </p>
-    </div>
-    {% endif %}
-
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="flash-stack">

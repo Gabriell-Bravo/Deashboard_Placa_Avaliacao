@@ -5,7 +5,6 @@
   <div>
     <p class="eyebrow">Identificador da placa</p>
     <h1><span class="code-pill lg">{{ item.code }}</span></h1>
-    <p class="muted">Este código fica impresso no QR. Use-o para achar a placa no sistema.</p>
   </div>
   <div class="head-actions">
     <a class="btn btn-primary" href="{{ url_for('placa_pdf', code=item.code) }}">Baixar plaquinha PDF</a>
@@ -51,7 +50,6 @@
       <a class="btn btn-primary btn-block" href="{{ url_for('placa_pdf', code=item.code) }}">Baixar plaquinha (PDF)</a>
       <a class="btn btn-secondary btn-block" href="{{ url_for('placa_png', code=item.code, download=1) }}">Baixar imagem (PNG)</a>
     </div>
-    <p class="help">A arte já sai com o QR dinâmico e o G do Google no centro — pronta para colar/imprimir na plaquinha.</p>
   </div>
 
   <form method="post" class="panel form-grid">
@@ -67,7 +65,6 @@
     <label class="full">
       Link de destino atual *
       <input type="text" name="target_url" required value="{{ item.target_url }}" />
-      <span class="help">Destino detectado: {{ item.destination_label }}</span>
     </label>
     <label class="full">
       Observações
@@ -75,7 +72,7 @@
     </label>
     <label class="checkbox full">
       <input type="checkbox" name="active" {% if item.active %}checked{% endif %} />
-      Placa disponível (se desligar, o QR não redireciona)
+      Placa disponível
     </label>
 
     <div class="meta-row full">

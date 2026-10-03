@@ -4,7 +4,6 @@
 <section class="page-head">
   <div>
     <h1>Dashboard</h1>
-    <p class="muted">Acompanhe leituras, vendas e gerencie cada plaquinha pelo ID <code>PLACA-XXXX</code>.</p>
   </div>
   <div class="head-actions-stack">
     <a class="btn btn-primary" href="{{ url_for('create_qr') }}">+ Nova placa</a>
@@ -17,17 +16,6 @@
     </form>
   </div>
 </section>
-
-{% if not persistent_data %}
-<div class="local-warning">
-  <strong>Atenção: dados podem sumir no próximo deploy</strong>
-  <p>
-    No Render, ative um <strong>Disk</strong> em <code>/var/data</code> e defina
-    <code>DATA_DIR=/var/data</code>. Sem isso, cada atualização do site pode apagar as placas.
-    Enquanto isso, use <strong>Exportar backup</strong> com frequência.
-  </p>
-</div>
-{% endif %}
 
 <section class="stats stats-5">
   <article class="stat">
@@ -95,13 +83,11 @@
 
     {% if item.sold %}
     <div class="placa-sold-note">
-      <strong>Placa vendida</strong>
-      <span>Registrada por {{ item.sale_price_label }}{% if item.sold_at_label %} · {{ item.sold_at_label }}{% endif %}</span>
+      <strong>Vendida · {{ item.sale_price_label }}</strong>
     </div>
     {% elif not item.active %}
     <div class="placa-warning">
       <strong>Placa desligada</strong>
-      <span>O QR não redireciona enquanto desligada.</span>
     </div>
     {% endif %}
 

@@ -3,8 +3,7 @@
 {% block content %}
 <section class="page-head">
   <div>
-    <h1>Novo QR Code dinâmico</h1>
-    <p class="muted">Gere um código único para a placa. Depois da impressão, você pode trocar o link de destino a qualquer momento.</p>
+    <h1>Nova placa</h1>
   </div>
 </section>
 
@@ -18,17 +17,16 @@
     <input type="text" name="company" placeholder="Ex: Lucas" />
   </label>
   <label class="full">
-    Link de destino (Google Avaliações, site, etc.) *
+    Link de destino *
     <input type="text" name="target_url" required placeholder="https://g.page/r/...." />
   </label>
   <label>
     Código personalizado (opcional)
-    <input type="text" name="code" placeholder="Deixe vazio para gerar PLACA-8177" pattern="PLACA-[0-9]{4,8}" />
-    <span class="help">Formato: PLACA-8177. Este código aparece no QR impresso.</span>
+    <input type="text" name="code" placeholder="PLACA-8177" pattern="PLACA-[0-9]{4,8}" />
   </label>
   <label class="full">
     Observações
-    <textarea name="notes" rows="3" placeholder="Local de instalação, lote de impressão, etc."></textarea>
+    <textarea name="notes" rows="3"></textarea>
   </label>
   <div class="form-actions full">
     <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Cancelar</a>
