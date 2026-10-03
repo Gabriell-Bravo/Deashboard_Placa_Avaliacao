@@ -10,18 +10,29 @@
     const titleEl = document.getElementById("qrModalTitle");
     const codeEl = document.getElementById("qrModalCode");
     const imgEl = document.getElementById("qrModalImg");
+    const loaderEl = document.getElementById("qrModalLoader");
     const urlEl = document.getElementById("qrModalUrl");
     const downloadEl = document.getElementById("qrModalDownload");
     const pngEl = document.getElementById("qrModalPng");
 
+    function showLoader(show) {
+      if (loaderEl) loaderEl.hidden = !show;
+      if (imgEl) imgEl.hidden = show;
+    }
+
     function openQrModal(btn) {
       titleEl.textContent = btn.dataset.name || "Plaquinha";
       codeEl.textContent = btn.dataset.code || "";
-      imgEl.src = btn.dataset.img || "";
-      imgEl.alt = "Plaquinha " + (btn.dataset.code || "");
       urlEl.textContent = btn.dataset.public || "";
       downloadEl.href = btn.dataset.download || "#";
       if (pngEl) pngEl.href = btn.dataset.png || "#";
+      showLoader(true);
+      imgEl.onload = () => showLoader(false);
+      imgEl.onerror = () => {
+        if (loaderEl) loaderEl.textContent = "Falha ao carregar preview. Tente Baixar PDF/PNG.";
+      };
+      imgEl.alt = "Plaquinha " + (btn.dataset.code || "");
+      imgEl.src = btn.dataset.img || "";
       qrModal.hidden = false;
       lockScroll(true);
     }
@@ -29,6 +40,10 @@
     function closeQrModal() {
       qrModal.hidden = true;
       imgEl.src = "";
+      imgEl.onload = null;
+      imgEl.onerror = null;
+      showLoader(true);
+      if (loaderEl) loaderEl.textContent = "Gerando preview...";
       if (!sellModal || sellModal.hidden) lockScroll(false);
     }
 

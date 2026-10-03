@@ -99,7 +99,7 @@
         data-open-qr
         data-code="{{ item.code }}"
         data-name="{{ item.name }}"
-        data-img="{{ url_for('placa_png', code=item.code) }}"
+        data-img="{{ url_for('placa_png', code=item.code, preview=1, w=480) }}"
         data-download="{{ url_for('placa_pdf', code=item.code) }}"
         data-png="{{ url_for('placa_png', code=item.code, download=1) }}"
         data-public="{{ base_url }}/r/{{ item.code }}"
@@ -144,8 +144,9 @@
     <p class="eyebrow">Plaquinha pronta para impressão</p>
     <h3 id="qrModalTitle">—</h3>
     <p class="placa-id" id="qrModalCode">—</p>
-    <div class="qr-modal-preview placa-modal-preview">
-      <img id="qrModalImg" src="" alt="Plaquinha" />
+    <div class="qr-modal-preview placa-modal-preview" id="qrModalPreviewWrap">
+      <div class="preview-loader" id="qrModalLoader">Gerando preview...</div>
+      <img id="qrModalImg" src="" alt="Plaquinha" hidden />
     </div>
     <p class="tiny muted" id="qrModalUrl"></p>
     <div class="qr-modal-actions">

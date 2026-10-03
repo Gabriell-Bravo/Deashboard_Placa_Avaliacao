@@ -528,15 +528,33 @@ def placa_png(code: str):
     if not item:
         return Response("Não encontrado", status=404)
     try:
-        data = placa_png_bytes(public_qr_url(item["code"]), code=item["code"])
+        preview = request.args.get("preview") == "1"
+        width = 480 if preview else None
+        if request.args.get("w"):
+            try:
+                width = max(120, min(1258, int(request.args.get("w"))))
+            except ValueError:
+                width = 480 if preview else None
+        fmt = "JPEG" if preview else "PNG"
+        data = placa_png_bytes(
+            public_qr_url(item["code"]),
+            code=item["code"],
+            max_width=width,
+            fmt=fmt,
+        )
     except FileNotFoundError as exc:
         return Response(str(exc), status=500)
-    return send_file(
+
+    mime = "image/jpeg" if fmt == "JPEG" else "image/png"
+    ext = "jpg" if fmt == "JPEG" else "png"
+    resp = send_file(
         BytesIO(data),
-        mimetype="image/png",
+        mimetype=mime,
         as_attachment=request.args.get("download") == "1",
-        download_name=f"{item['code']}-plaquinha.png",
+        download_name=f"{item['code']}-plaquinha.{ext}",
     )
+    resp.headers["Cache-Control"] = "private, max-age=300"
+    return resp
 
 
 @app.route("/qrcodes/<code>/placa.pdf")

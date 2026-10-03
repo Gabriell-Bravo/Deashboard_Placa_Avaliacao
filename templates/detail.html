@@ -41,7 +41,7 @@
   <div class="panel">
     <h2>Preview da plaquinha</h2>
     <div class="qr-preview placa-art-preview">
-      <img src="{{ url_for('placa_png', code=item.code) }}" alt="Plaquinha {{ item.code }}" />
+      <img src="{{ url_for('placa_png', code=item.code, preview=1, w=520) }}" alt="Plaquinha {{ item.code }}" loading="lazy" />
     </div>
     <div class="url-box">
       <span class="tiny muted">URL fixa impressa no QR</span>
