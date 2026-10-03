@@ -34,6 +34,8 @@ PUBLIC_BASE_URL = (
     or os.environ.get("RENDER_EXTERNAL_URL")
     or ""
 ).rstrip("/")
+# Disco efêmero do Render (sem Disk): dados somem no deploy
+PERSISTENT_DATA = DATA_DIR.startswith("/var/data") or os.environ.get("PERSISTENT_DATA") == "1"
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -229,6 +231,7 @@ def inject_helpers():
         "format_money": format_money,
         "public_base": base,
         "is_local_host": is_local_url(base) if base else True,
+        "persistent_data": PERSISTENT_DATA,
     }
 
 
@@ -296,6 +299,124 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+
+@app.route("/backup.json")
+@login_required
+def export_backup():
+    import json
+
+    db = get_db()
+    rows = db.execute("SELECT * FROM qrcodes ORDER BY id").fetchall()
+    payload = {
+        "exported_at": now_iso(),
+        "items": [dict(row) for row in rows],
+    }
+    data = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+    return send_file(
+        BytesIO(data),
+        mimetype="application/json",
+        as_attachment=True,
+        download_name=f"backup-placas-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.json",
+    )
+
+
+@app.route("/backup/import", methods=["POST"])
+@login_required
+def import_backup():
+    import json
+
+    upload = request.files.get("backup_file")
+    if not upload or not upload.filename:
+        flash("Selecione um arquivo de backup JSON.", "error")
+        return redirect(url_for("dashboard"))
+    try:
+        payload = json.load(upload.stream)
+        items = payload.get("items") if isinstance(payload, dict) else payload
+        if not isinstance(items, list):
+            raise ValueError("Formato inválido.")
+    except Exception:
+        flash("Não foi possível ler o backup. Use o JSON exportado pelo sistema.", "error")
+        return redirect(url_for("dashboard"))
+
+    db = get_db()
+    imported = 0
+    for raw in items:
+        if not isinstance(raw, dict):
+            continue
+        code = str(raw.get("code") or "").strip().upper()
+        name = str(raw.get("name") or "").strip()
+        target_url = str(raw.get("target_url") or "").strip()
+        if not code or not name or not target_url:
+            continue
+        try:
+            target_url = normalize_url(target_url)
+        except ValueError:
+            continue
+
+        now = now_iso()
+        company = (raw.get("company") or "").strip()
+        notes = (raw.get("notes") or "").strip()
+        scans = int(raw.get("scans") or 0)
+        last_scan = raw.get("last_scan")
+        active = 1 if raw.get("active", 1) else 0
+        sold = 1 if raw.get("sold") else 0
+        sale_price = raw.get("sale_price")
+        sold_at = raw.get("sold_at")
+        created_at = raw.get("created_at") or now
+
+        exists = db.execute("SELECT id FROM qrcodes WHERE code = ?", (code,)).fetchone()
+        if exists:
+            db.execute(
+                """
+                UPDATE qrcodes
+                SET name=?, company=?, target_url=?, notes=?, scans=?, last_scan=?,
+                    active=?, sold=?, sale_price=?, sold_at=?, updated_at=?
+                WHERE code=?
+                """,
+                (
+                    name,
+                    company,
+                    target_url,
+                    notes,
+                    scans,
+                    last_scan,
+                    active,
+                    sold,
+                    sale_price,
+                    sold_at,
+                    now,
+                    code,
+                ),
+            )
+        else:
+            db.execute(
+                """
+                INSERT INTO qrcodes (
+                    code, name, company, target_url, notes, scans, last_scan,
+                    active, sold, sale_price, sold_at, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    code,
+                    name,
+                    company,
+                    target_url,
+                    notes,
+                    scans,
+                    last_scan,
+                    active,
+                    sold,
+                    sale_price,
+                    sold_at,
+                    created_at,
+                    now,
+                ),
+            )
+        imported += 1
+    db.commit()
+    flash(f"Backup importado: {imported} placa(s).", "success")
+    return redirect(url_for("dashboard"))
 
 
 @app.route("/")

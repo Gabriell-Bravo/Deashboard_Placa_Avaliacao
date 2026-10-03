@@ -1,32 +1,29 @@
-# Deploy no Render (grátis) via GitHub
+# Persistência dos dados no Render
 
-O GitHub **não executa** Flask. Ele só guarda o código.
-O fluxo que funciona:
+## Por que os cadastros sumiram?
 
-1. Código no GitHub
-2. Render puxa do GitHub e sobe o site na internet
-3. QR codes passam a usar a URL pública (`https://....onrender.com`)
+No Render, o disco padrão do app é **temporário**.
+Cada novo deploy (ou reinício) pode apagar o banco SQLite.
 
-## Passo a passo
+Isso **não** é bug do sistema — é o comportamento padrão da hospedagem sem disco persistente.
 
-### 1. Subir o código no GitHub
-Crie um repositório (pode ser privado) e envie esta pasta.
+## Como não perder mais (obrigatório)
 
-### 2. Criar app no Render
-1. Acesse https://render.com e entre com GitHub
-2. **New → Web Service**
-3. Selecione este repositório
-4. Render detecta o `render.yaml` / `Procfile`
-5. Em Environment Variables, confira:
-   - `ADMIN_PASSWORD` = sua senha do painel
-   - `SECRET_KEY` = (Render pode gerar)
-6. Clique em **Create Web Service**
+No painel do Render, no seu Web Service:
 
-### 3. Depois que subir
-- Abra a URL `https://seu-app.onrender.com`
-- Entre com a senha
-- **Baixe de novo** as plaquinhas PDF/PNG (os QR antigos com localhost não valem)
+1. Abra o serviço → **Disks** → **Add disk**
+2. Configure:
+   - **Name:** `qr-data`
+   - **Mount Path:** `/var/data`
+   - **Size:** `1 GB`
+3. Em **Environment** adicione/altere:
+   - `DATA_DIR` = `/var/data`
+4. Salve e faça um **Manual Deploy** (Clear build cache não é necessário)
 
-## Observações
-- No plano free o Render pode “dormir” após ~15 min sem acesso (primeira abertura fica lenta)
-- O banco SQLite no free pode resetar em alguns redeploys; para uso sério, depois dá para colocar disco persistente
+Depois disso, os cadastros, vendas e leituras ficam no disco persistente e **não somem** nos deploys.
+
+## Backup opcional
+
+No dashboard do sistema existe **Exportar backup**.
+Baixe de vez em quando um JSON com todas as placas.
+Se algo der errado, use **Importar backup**.

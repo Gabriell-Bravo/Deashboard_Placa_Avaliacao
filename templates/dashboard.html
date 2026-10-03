@@ -6,8 +6,28 @@
     <h1>Dashboard</h1>
     <p class="muted">Acompanhe leituras, vendas e gerencie cada plaquinha pelo ID <code>PLACA-XXXX</code>.</p>
   </div>
-  <a class="btn btn-primary" href="{{ url_for('create_qr') }}">+ Nova placa</a>
+  <div class="head-actions-stack">
+    <a class="btn btn-primary" href="{{ url_for('create_qr') }}">+ Nova placa</a>
+    <a class="btn btn-secondary" href="{{ url_for('export_backup') }}">Exportar backup</a>
+    <form class="import-form" method="post" action="{{ url_for('import_backup') }}" enctype="multipart/form-data">
+      <label class="btn btn-ghost import-label">
+        Importar backup
+        <input type="file" name="backup_file" accept="application/json,.json" onchange="this.form.submit()" hidden />
+      </label>
+    </form>
+  </div>
 </section>
+
+{% if not persistent_data %}
+<div class="local-warning">
+  <strong>Atenção: dados podem sumir no próximo deploy</strong>
+  <p>
+    No Render, ative um <strong>Disk</strong> em <code>/var/data</code> e defina
+    <code>DATA_DIR=/var/data</code>. Sem isso, cada atualização do site pode apagar as placas.
+    Enquanto isso, use <strong>Exportar backup</strong> com frequência.
+  </p>
+</div>
+{% endif %}
 
 <section class="stats stats-5">
   <article class="stat">

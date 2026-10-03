@@ -2,9 +2,13 @@ services:
   - type: web
     name: qr-plaquinhas
     runtime: python
-    plan: free
+    plan: starter
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    disk:
+      name: qr-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -13,4 +17,4 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.8"
       - key: DATA_DIR
-        value: /opt/render/project/src/data
+        value: /var/data

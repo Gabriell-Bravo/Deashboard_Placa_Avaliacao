@@ -94,13 +94,15 @@ code, .mono { font-family: var(--mono); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
 .btn-danger { background: #fee4e2; color: var(--danger); border-color: #fecdca; }
 
-.page-head {
+.head-actions-stack {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin: 1.25rem 0 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
 }
+.import-form { margin: 0; }
+.import-label { cursor: pointer; margin: 0; }
 .page-head h1 { margin: 0 0 0.35rem; font-size: clamp(1.6rem, 3vw, 2.1rem); }
 .eyebrow {
   margin: 0 0 0.4rem;
