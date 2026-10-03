@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Entrar · QR Plaquinhas{% endblock %}
+{% block content %}
+<section class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="brand-mark">QR</span>
+      <h1>QR Plaquinhas</h1>
+      <p>Gerencie QR codes dinâmicos das suas placas de avaliação Google.</p>
+    </div>
+    <form method="post" class="stack-form">
+      <label>
+        Senha do painel
+        <input type="password" name="password" autofocus required placeholder="Digite a senha" />
+      </label>
+      {% if error %}
+        <div class="flash flash-error">{{ error }}</div>
+      {% endif %}
+      <button class="btn btn-primary btn-block" type="submit">Entrar</button>
+      <p class="muted tiny">Senha padrão: <code>admin123</code> (altere com a variável <code>ADMIN_PASSWORD</code>)</p>
+    </form>
+  </div>
+</section>
+{% endblock %}

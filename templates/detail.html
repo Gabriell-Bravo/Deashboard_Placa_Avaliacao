@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ item.code }} · QR Plaquinhas{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Identificador da placa</p>
+    <h1><span class="code-pill lg">{{ item.code }}</span></h1>
+    <p class="muted">Este código fica impresso no QR. Use-o para achar a placa no sistema.</p>
+  </div>
+  <div class="head-actions">
+    <a class="btn btn-primary" href="{{ url_for('placa_pdf', code=item.code) }}">Baixar plaquinha PDF</a>
+    <a class="btn btn-secondary" href="{{ url_for('placa_png', code=item.code, download=1) }}">Baixar PNG</a>
+    {% if not item.sold %}
+    <button
+      type="button"
+      class="btn btn-secondary"
+      data-open-sell
+      data-code="{{ item.code }}"
+      data-name="{{ item.name }}"
+      data-action="{{ url_for('sell_qr', code=item.code) }}"
+    >Marcar vendida</button>
+    {% else %}
+    <form method="post" action="{{ url_for('unsell_qr', code=item.code) }}" onsubmit="return confirm('Desfazer venda?');">
+      <button class="btn btn-secondary" type="submit">Desfazer venda</button>
+    </form>
+    {% endif %}
+    <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Voltar</a>
+  </div>
+</section>
+
+{% if item.sold %}
+<div class="sold-banner">
+  <div>
+    <strong>Placa vendida</strong>
+    <p class="muted tiny">Valor: {{ item.sale_price_label }}{% if item.sold_at_label %} · {{ item.sold_at_label }}{% endif %}</p>
+  </div>
+</div>
+{% endif %}
+
+<section class="detail-grid">
+  <div class="panel">
+    <h2>Preview da plaquinha</h2>
+    <div class="qr-preview placa-art-preview">
+      <img src="{{ url_for('placa_png', code=item.code) }}" alt="Plaquinha {{ item.code }}" />
+    </div>
+    <div class="url-box">
+      <span class="tiny muted">URL fixa impressa no QR</span>
+      <code>{{ public_url }}</code>
+    </div>
+    <div class="form-actions" style="justify-content:stretch;margin-top:0.9rem;">
+      <a class="btn btn-primary btn-block" href="{{ url_for('placa_pdf', code=item.code) }}">Baixar plaquinha (PDF)</a>
+      <a class="btn btn-secondary btn-block" href="{{ url_for('placa_png', code=item.code, download=1) }}">Baixar imagem (PNG)</a>
+    </div>
+    <p class="help">A arte já sai com o QR dinâmico e o G do Google no centro — pronta para colar/imprimir na plaquinha.</p>
+  </div>
+
+  <form method="post" class="panel form-grid">
+    <h2 class="full">Dados e destino</h2>
+    <label>
+      Nome da placa *
+      <input type="text" name="name" required value="{{ item.name }}" />
+    </label>
+    <label>
+      Cliente
+      <input type="text" name="company" value="{{ item.company or '' }}" />
+    </label>
+    <label class="full">
+      Link de destino atual *
+      <input type="text" name="target_url" required value="{{ item.target_url }}" />
+      <span class="help">Destino detectado: {{ item.destination_label }}</span>
+    </label>
+    <label class="full">
+      Observações
+      <textarea name="notes" rows="3">{{ item.notes or '' }}</textarea>
+    </label>
+    <label class="checkbox full">
+      <input type="checkbox" name="active" {% if item.active %}checked{% endif %} />
+      Placa disponível (se desligar, o QR não redireciona)
+    </label>
+
+    <div class="meta-row full">
+      <div><span class="muted tiny">Leituras</span><strong>{{ item.scans }}</strong></div>
+      <div><span class="muted tiny">Última leitura</span><strong>{{ item.last_scan_label }}</strong></div>
+      <div><span class="muted tiny">Atualizado</span><strong>{{ item.updated_at }}</strong></div>
+    </div>
+
+    <div class="form-actions full">
+      <button class="btn btn-primary" type="submit">Salvar alterações</button>
+    </div>
+  </form>
+</section>
+
+<form method="post" action="{{ url_for('delete_qr', code=item.code) }}" class="danger-zone" onsubmit="return confirm('Remover este QR Code? A placa impressa deixará de funcionar.');">
+  <div>
+    <h3>Zona de perigo</h3>
+    <p class="muted tiny">Remove o registro do sistema. A URL impressa passará a retornar erro.</p>
+  </div>
+  <button class="btn btn-danger" type="submit">Excluir QR</button>
+</form>
+
+<div class="qr-modal" id="sellModal" hidden>
+  <div class="qr-modal-backdrop" data-close-sell></div>
+  <form class="qr-modal-card sell-modal-card" method="post" id="sellForm" role="dialog" aria-modal="true" aria-labelledby="sellModalTitle">
+    <button class="qr-modal-close" type="button" data-close-sell aria-label="Fechar">×</button>
+    <p class="eyebrow">Registrar venda</p>
+    <h3 id="sellModalTitle">Marcar como vendida</h3>
+    <p class="placa-id" id="sellModalCode">—</p>
+    <p class="muted tiny">Quanto você vendeu esta placa?</p>
+    <label class="sell-price-label">
+      Valor da venda (R$)
+      <input type="text" name="sale_price" id="sellPriceInput" inputmode="decimal" placeholder="Ex: 89,90" required autocomplete="off" />
+    </label>
+    <div class="qr-modal-actions">
+      <button class="btn btn-ghost" type="button" data-close-sell>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Confirmar venda</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% endblock %}

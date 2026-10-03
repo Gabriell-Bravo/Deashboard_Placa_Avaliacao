@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · QR Plaquinhas{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">Acompanhe leituras, vendas e gerencie cada plaquinha pelo ID <code>PLACA-XXXX</code>.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('create_qr') }}">+ Nova placa</a>
+</section>
+
+<section class="stats stats-5">
+  <article class="stat">
+    <span class="stat-label">Leituras de QR</span>
+    <strong>{{ stats.scans }}</strong>
+  </article>
+  <article class="stat stat-money">
+    <span class="stat-label">Valor arrecadado</span>
+    <strong>{{ format_money(stats.revenue) }}</strong>
+  </article>
+  <article class="stat">
+    <span class="stat-label">Placas vendidas</span>
+    <strong>{{ stats.sold }}</strong>
+  </article>
+  <article class="stat">
+    <span class="stat-label">Total de placas</span>
+    <strong>{{ stats.total }}</strong>
+  </article>
+  <article class="stat">
+    <span class="stat-label">Disponíveis</span>
+    <strong>{{ stats.available }}</strong>
+  </article>
+</section>
+
+<form class="search-bar" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Buscar por código, cliente, nome ou link..." />
+  <button class="btn btn-secondary" type="submit">Buscar</button>
+</form>
+
+{% if items %}
+<div class="cards-grid">
+  {% for item in items %}
+  <article class="placa-card {% if item.sold %}is-sold{% elif not item.active %}is-off{% endif %}" data-code="{{ item.code }}">
+    <header class="placa-card-head">
+      <label class="placa-check">
+        <input type="checkbox" name="selected" value="{{ item.code }}" />
+      </label>
+      <div class="placa-titles">
+        <h2 class="placa-name" title="{{ item.name }}">{{ item.name }}</h2>
+        <p class="placa-id">{{ item.code }}</p>
+      </div>
+      {% if item.sold %}
+        <span class="status-pill status-sold"><span class="dot"></span> VENDIDA</span>
+      {% elif item.active %}
+        <span class="status-pill status-on"><span class="dot"></span> DISPONÍVEL</span>
+      {% else %}
+        <span class="status-pill status-off"><span class="dot"></span> DESLIGADA</span>
+      {% endif %}
+    </header>
+
+    <div class="placa-body">
+      <div class="placa-qr-thumb">
+        <img src="{{ url_for('qr_image', code=item.code, label=0) }}" alt="QR {{ item.code }}" loading="lazy" />
+      </div>
+      <div class="placa-meta">
+        <p><strong>Cliente:</strong> {{ item.company or '—' }}</p>
+        <p><strong>Destino:</strong> {{ item.destination_label }}</p>
+        <p class="placa-reads">{{ item.scans }} leitura{% if item.scans != 1 %}s{% endif %}</p>
+        <p class="placa-last">Última: {{ item.last_scan_label }}</p>
+        {% if item.sold %}
+        <p class="placa-sale"><strong>Venda:</strong> {{ item.sale_price_label }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if item.sold %}
+    <div class="placa-sold-note">
+      <strong>Placa vendida</strong>
+      <span>Registrada por {{ item.sale_price_label }}{% if item.sold_at_label %} · {{ item.sold_at_label }}{% endif %}</span>
+    </div>
+    {% elif not item.active %}
+    <div class="placa-warning">
+      <strong>Placa desligada</strong>
+      <span>O QR não redireciona enquanto desligada.</span>
+    </div>
+    {% endif %}
+
+    <footer class="placa-actions {% if not item.sold %}placa-actions-3{% endif %}">
+      <a class="btn btn-config" href="{{ url_for('qr_detail', code=item.code) }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 20h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        Configurar
+      </a>
+      <button
+        type="button"
+        class="btn btn-view-qr"
+        data-open-qr
+        data-code="{{ item.code }}"
+        data-name="{{ item.name }}"
+        data-img="{{ url_for('placa_png', code=item.code) }}"
+        data-download="{{ url_for('placa_pdf', code=item.code) }}"
+        data-png="{{ url_for('placa_png', code=item.code, download=1) }}"
+        data-public="{{ base_url }}/r/{{ item.code }}"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 2h2v2h-2v-2zm4-2h2v6h-6v-2h4v-4z" fill="currentColor"/>
+        </svg>
+        Ver / baixar plaquinha
+      </button>
+      {% if not item.sold %}
+      <button
+        type="button"
+        class="btn btn-sell"
+        data-open-sell
+        data-code="{{ item.code }}"
+        data-name="{{ item.name }}"
+        data-action="{{ url_for('sell_qr', code=item.code) }}"
+      >
+        Marcar vendida
+      </button>
+      {% else %}
+      <form method="post" action="{{ url_for('unsell_qr', code=item.code) }}" class="unsell-form" onsubmit="return confirm('Desfazer venda de {{ item.code }}?');">
+        <button class="btn btn-unsell" type="submit">Desfazer venda</button>
+      </form>
+      {% endif %}
+    </footer>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+  <h2>Nenhuma placa ainda</h2>
+  <p>Crie a primeira placa com QR dinâmico para começar a vender.</p>
+  <a class="btn btn-primary" href="{{ url_for('create_qr') }}">Criar primeira placa</a>
+</div>
+{% endif %}
+
+<div class="qr-modal" id="qrModal" hidden>
+  <div class="qr-modal-backdrop" data-close-qr></div>
+  <div class="qr-modal-card qr-modal-wide" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
+    <button class="qr-modal-close" type="button" data-close-qr aria-label="Fechar">×</button>
+    <p class="eyebrow">Plaquinha pronta para impressão</p>
+    <h3 id="qrModalTitle">—</h3>
+    <p class="placa-id" id="qrModalCode">—</p>
+    <div class="qr-modal-preview placa-modal-preview">
+      <img id="qrModalImg" src="" alt="Plaquinha" />
+    </div>
+    <p class="tiny muted" id="qrModalUrl"></p>
+    <div class="qr-modal-actions">
+      <a class="btn btn-primary" id="qrModalDownload" href="#">Baixar PDF</a>
+      <a class="btn btn-secondary" id="qrModalPng" href="#">Baixar PNG</a>
+      <button class="btn btn-ghost" type="button" data-close-qr>Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="qr-modal" id="sellModal" hidden>
+  <div class="qr-modal-backdrop" data-close-sell></div>
+  <form class="qr-modal-card sell-modal-card" method="post" id="sellForm" role="dialog" aria-modal="true" aria-labelledby="sellModalTitle">
+    <button class="qr-modal-close" type="button" data-close-sell aria-label="Fechar">×</button>
+    <p class="eyebrow">Registrar venda</p>
+    <h3 id="sellModalTitle">Marcar como vendida</h3>
+    <p class="placa-id" id="sellModalCode">—</p>
+    <p class="muted tiny">Quanto você vendeu esta placa?</p>
+    <label class="sell-price-label">
+      Valor da venda (R$)
+      <input
+        type="text"
+        name="sale_price"
+        id="sellPriceInput"
+        inputmode="decimal"
+        placeholder="Ex: 89,90"
+        required
+        autocomplete="off"
+      />
+    </label>
+    <div class="qr-modal-actions">
+      <button class="btn btn-ghost" type="button" data-close-sell>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Confirmar venda</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% endblock %}
