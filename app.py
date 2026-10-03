@@ -1,7 +1,6 @@
 import os
 import re
 import secrets
-import sqlite3
 from datetime import datetime
 from functools import wraps
 from io import BytesIO
@@ -21,12 +20,11 @@ from flask import (
     session,
     url_for,
 )
+from db import Database, init_schema, integrity_error_types, persistent_data, using_postgres
 from placa import placa_pdf_bytes, placa_png_bytes
 from qrcode.constants import ERROR_CORRECT_M
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
-DB_PATH = os.path.join(DATA_DIR, "qrcodes.db")
 SECRET_KEY = os.environ.get("SECRET_KEY", "troque-esta-chave-em-producao")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 PUBLIC_BASE_URL = (
@@ -34,19 +32,16 @@ PUBLIC_BASE_URL = (
     or os.environ.get("RENDER_EXTERNAL_URL")
     or ""
 ).rstrip("/")
-# Disco efêmero do Render (sem Disk): dados somem no deploy
-PERSISTENT_DATA = DATA_DIR.startswith("/var/data") or os.environ.get("PERSISTENT_DATA") == "1"
+PERSISTENT_DATA = persistent_data()
+IntegrityError = integrity_error_types()
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 
-def get_db():
+def get_db() -> Database:
     if "db" not in g:
-        os.makedirs(DATA_DIR, exist_ok=True)
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
+        g.db = Database()
     return g.db
 
 
@@ -58,39 +53,7 @@ def close_db(_exc):
 
 
 def init_db():
-    db = get_db()
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS qrcodes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            code TEXT NOT NULL UNIQUE,
-            name TEXT NOT NULL,
-            company TEXT,
-            target_url TEXT NOT NULL,
-            notes TEXT,
-            scans INTEGER NOT NULL DEFAULT 0,
-            last_scan TEXT,
-            active INTEGER NOT NULL DEFAULT 1,
-            sold INTEGER NOT NULL DEFAULT 0,
-            sale_price REAL,
-            sold_at TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        )
-        """
-    )
-    cols = {row[1] for row in db.execute("PRAGMA table_info(qrcodes)").fetchall()}
-    migrations = {
-        "last_scan": "ALTER TABLE qrcodes ADD COLUMN last_scan TEXT",
-        "sold": "ALTER TABLE qrcodes ADD COLUMN sold INTEGER NOT NULL DEFAULT 0",
-        "sale_price": "ALTER TABLE qrcodes ADD COLUMN sale_price REAL",
-        "sold_at": "ALTER TABLE qrcodes ADD COLUMN sold_at TEXT",
-    }
-    for col, sql in migrations.items():
-        if col not in cols:
-            db.execute(sql)
-    db.commit()
-
+    init_schema(get_db())
 
 def login_required(view):
     @wraps(view)
@@ -232,6 +195,7 @@ def inject_helpers():
         "public_base": base,
         "is_local_host": is_local_url(base) if base else True,
         "persistent_data": PERSISTENT_DATA,
+        "using_postgres": using_postgres(),
     }
 
 
@@ -430,7 +394,7 @@ def dashboard():
         sql += " WHERE code LIKE ? OR name LIKE ? OR company LIKE ? OR target_url LIKE ?"
         like = f"%{q}%"
         params.extend([like, like, like, like])
-    sql += " ORDER BY datetime(created_at) DESC"
+    sql += " ORDER BY created_at DESC"
     rows = [enrich_item(row) for row in db.execute(sql, params).fetchall()]
 
     stats = dashboard_stats(db)
@@ -475,7 +439,7 @@ def create_qr():
             db.commit()
             flash(f"QR Code {code} criado com sucesso.", "success")
             return redirect(url_for("dashboard"))
-        except sqlite3.IntegrityError:
+        except IntegrityError:
             flash("Este código já existe. Escolha outro.", "error")
         except ValueError as exc:
             flash(str(exc), "error")

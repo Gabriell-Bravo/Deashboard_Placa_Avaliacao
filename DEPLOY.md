@@ -1,29 +1,26 @@
-# Persistência dos dados no Render
+# Deploy (Render) + banco Neon
 
-## Por que os cadastros sumiram?
+## Persistência dos dados (recomendado: Neon grátis)
 
-No Render, o disco padrão do app é **temporário**.
-Cada novo deploy (ou reinício) pode apagar o banco SQLite.
+No plano Free do Render **não tem Disk**.  
+Para os cadastros não sumirem, use o Neon:
 
-Isso **não** é bug do sistema — é o comportamento padrão da hospedagem sem disco persistente.
+👉 Guia completo: [NEON.md](NEON.md)
 
-## Como não perder mais (obrigatório)
+Resumo:
+1. Crie projeto em https://neon.tech  
+2. Copie a `DATABASE_URL`  
+3. No Render → Environment → adicione `DATABASE_URL`  
+4. Deploy de novo  
 
-No painel do Render, no seu Web Service:
+## Deploy do código
 
-1. Abra o serviço → **Disks** → **Add disk**
-2. Configure:
-   - **Name:** `qr-data`
-   - **Mount Path:** `/var/data`
-   - **Size:** `1 GB`
-3. Em **Environment** adicione/altere:
-   - `DATA_DIR` = `/var/data`
-4. Salve e faça um **Manual Deploy** (Clear build cache não é necessário)
+```powershell
+git push origin main
+```
 
-Depois disso, os cadastros, vendas e leituras ficam no disco persistente e **não somem** nos deploys.
+O Render atualiza sozinho.
 
-## Backup opcional
+## Backup
 
-No dashboard do sistema existe **Exportar backup**.
-Baixe de vez em quando um JSON com todas as placas.
-Se algo der errado, use **Importar backup**.
+Mesmo com Neon, use **Exportar backup** de vez em quando.
