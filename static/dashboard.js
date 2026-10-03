@@ -16,8 +16,11 @@
     const pngEl = document.getElementById("qrModalPng");
 
     function showLoader(show) {
-      if (loaderEl) loaderEl.hidden = !show;
-      if (imgEl) imgEl.hidden = show;
+      if (loaderEl) {
+        loaderEl.hidden = !show;
+        loaderEl.style.display = show ? "grid" : "none";
+      }
+      if (imgEl) imgEl.hidden = !!show;
     }
 
     function openQrModal(btn) {
@@ -26,22 +29,38 @@
       urlEl.textContent = btn.dataset.public || "";
       downloadEl.href = btn.dataset.download || "#";
       if (pngEl) pngEl.href = btn.dataset.png || "#";
+
+      const url = btn.dataset.img || "";
       showLoader(true);
+      if (loaderEl) loaderEl.textContent = "Gerando preview...";
+
       imgEl.onload = () => showLoader(false);
       imgEl.onerror = () => {
-        if (loaderEl) loaderEl.textContent = "Falha ao carregar preview. Tente Baixar PDF/PNG.";
+        showLoader(true);
+        if (loaderEl) {
+          loaderEl.style.display = "grid";
+          loaderEl.textContent = "Falha ao carregar preview. Tente Baixar PDF/PNG.";
+        }
+        imgEl.hidden = true;
       };
       imgEl.alt = "Plaquinha " + (btn.dataset.code || "");
-      imgEl.src = btn.dataset.img || "";
+
+      // força novo evento de load mesmo com cache do navegador
+      imgEl.removeAttribute("src");
+      imgEl.src = url;
+      if (imgEl.complete && imgEl.naturalWidth > 0) {
+        showLoader(false);
+      }
+
       qrModal.hidden = false;
       lockScroll(true);
     }
 
     function closeQrModal() {
       qrModal.hidden = true;
-      imgEl.src = "";
       imgEl.onload = null;
       imgEl.onerror = null;
+      imgEl.removeAttribute("src");
       showLoader(true);
       if (loaderEl) loaderEl.textContent = "Gerando preview...";
       if (!sellModal || sellModal.hidden) lockScroll(false);
